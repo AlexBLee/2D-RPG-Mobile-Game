@@ -61,10 +61,7 @@ public class Player : CharacterEntity
     {
         if((mp - spell.cost) < 0)
         {
-            Debug.Log("not enough mana!");
-            infoText.color = lightBlue;
-            infoText.text = "Not enough mana!";
-            Instantiate(infoText, transform.position, Quaternion.identity);
+            SpawnText("Not enough mana!", transform.position, lightBlue);
         }
         else
         {
@@ -180,9 +177,7 @@ public class Player : CharacterEntity
         int randomGold = Random.Range(goldRecieved - goldMinValue, goldRecieved + goldMaxValue);
         inventory.gold += randomGold;
         exp += expRecieved;
-        infoText.color = Color.white;
-        infoText.text = "+" + expRecieved.ToString() + " XP";
-        Instantiate(infoText, transform.position, Quaternion.identity);
+        SpawnText("+" + expRecieved.ToString() + " XP", transform.position, Color.yellow);
         StartCoroutine(CheckForLevelUp());
         StartCoroutine(NextBattle());
     }
@@ -199,9 +194,8 @@ public class Player : CharacterEntity
             yield return new WaitForSeconds(levelDelayTime);
             uiManager.healthBar.SetAmount(hp,maxHP);
             uiManager.manaBar.SetAmount(mp,maxMP);
-            infoText.text = "Level up!";
-            Instantiate(infoText, transform.position, Quaternion.identity);
 
+            SpawnText("Level up!", transform.position, Color.yellow);
             exp += extraXP;
         }
     }

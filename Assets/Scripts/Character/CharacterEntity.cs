@@ -209,26 +209,31 @@ public class CharacterEntity : MonoBehaviour
     #endregion
 
     #region Moves
-    
-    protected void DoDamage()
+
+    private int CalculateDamage(float minDamage, float maxDamage, bool isSpell)
     {
         // Damage is calculated by finding a random value between the minimum/maximum damage, and then taking the damage reduced by the enemy's defense.
         // for clarification, 1 def is equal to 1% of damage reduced.
         // so in this case, the enemy takes 99% of the damage.
 
+        // Calculating miss chance
         float missChance = Random.Range(randomMin,randomMax);
         if (missChance < target.dodgeChance)
         {
-            infoText.text = "Miss!";
             AudioManager.Instance.Play("Woosh");
-            Instantiate(infoText, target.transform.position, Quaternion.identity);
-            return;
+            SpawnText("Miss", target.transform.position, Color.white);
+            return 0;
         }
 
         // Initial damage calculation
         float x = Random.Range(minDamage,maxDamage);
         x *= (defStartPointCalc - ((float)target.def/convertToPercentageCalc)); 
         int damage = Mathf.RoundToInt(x);
+
+        if (isSpell)
+        {
+            damage += additionalDamage;
+        }
 
         // Critcal chance calculation
         float chance = Random.Range(randomMin, randomMax);
@@ -252,14 +257,20 @@ public class CharacterEntity : MonoBehaviour
             infoText.color = Color.white;
         }
 
+        return damage;
+    }
+    
+    protected void DoDamage()
+    {
+        int damage = CalculateDamage(minDamage, maxDamage, false);
+
         // Apply damage
         target.hp -= damage;
         target.anim.SetTrigger("Hit");
         AudioManager.Instance.Play("SlashHit");
         
         // Spawning text
-        infoText.text = damage.ToString();
-        Instantiate(infoText, target.transform.position, Quaternion.identity);
+        SpawnText(damage.ToString(), target.transform.position);
         Debug.Log(gameObject.name + " dealt " + damage + " damage to " + target.name);
 
         if(target is Enemy)
@@ -282,42 +293,7 @@ public class CharacterEntity : MonoBehaviour
         // for clarification, 1 def is equal to 1% of damage reduced.
         // so in this case, the enemy takes 99% of the damage.
 
-        float missChance = Random.Range(randomMin,randomMax);
-        if (missChance < target.dodgeChance)
-        {
-            infoText.text = "Miss!";
-            AudioManager.Instance.Play("Woosh");
-            Instantiate(infoText, target.transform.position, Quaternion.identity);
-            return;
-        }
-        
-        // Initial Damage Calculation
-        float x = Random.Range(magicMinDamage,magicMaxDamage);
-        x *= (defStartPointCalc - ((float)target.def/convertToPercentageCalc));
-        int damage = Mathf.RoundToInt(x);
-        damage += additionalDamage;
-
-        // Critical chance calculation
-        float chance = Random.Range(randomMin, randomMax);
-        if(chance < critChance)
-        {
-            damage *= critBonusDamage;
-            
-            if(target is Player)
-            {
-                LeftHand shield = (LeftHand)target.GetComponent<Inventory>().equips[3];
-                if(shield != null)
-                {
-                    damage = shield.ReduceCrit(damage);
-                }
-            }
-            
-            infoText.color = Color.yellow;
-        }
-        else
-        {
-            infoText.color = Color.white;
-        }
+       int damage = CalculateDamage(magicMinDamage, magicMaxDamage, true);
 
         // Apply damage
         target.hp -= damage;
@@ -325,8 +301,7 @@ public class CharacterEntity : MonoBehaviour
         AudioManager.Instance.Play("SlashHit");
 
         // Spawn text
-        infoText.text = damage.ToString();
-        Instantiate(infoText, target.transform.position, Quaternion.identity);
+        SpawnText(damage.ToString(), target.transform.position);
         Debug.Log(gameObject.name + " dealt " + damage + " damage to " + target.name);
 
         if(target is Enemy)
@@ -364,11 +339,10 @@ public class CharacterEntity : MonoBehaviour
             hp = maxHP;
         }
 
+        // Heal without playing the animation
         if(!battleFinish)
         {
-            infoText.text = amount.ToString();
-            infoText.color = Color.green;
-            Instantiate(infoText, transform.position, Quaternion.identity);
+            SpawnText(amount.ToString(), transform.position, Color.green);
             AudioManager.Instance.Play("UsePotion");
             anim.SetTrigger("Heal");
         }
@@ -392,11 +366,10 @@ public class CharacterEntity : MonoBehaviour
             mp = maxMP;
         }
 
+        // Restore MP without animation
         if(!battleFinish)
         {
-            infoText.text = amount.ToString();
-            infoText.color = Color.cyan;
-            Instantiate(infoText, transform.position, Quaternion.identity);
+            SpawnText(amount.ToString(), transform.position, Color.cyan);
             AudioManager.Instance.Play("UsePotion");
             anim.SetTrigger("Heal");
         }
@@ -475,5 +448,22 @@ public class CharacterEntity : MonoBehaviour
     {
         AudioManager.Instance.Play(n);
     }
+
+    // If colour is set before the spawning of the text
+    public void SpawnText(string text, Vector2 position)
+    {
+        infoText.text = text;
+        Instantiate(infoText, position, Quaternion.identity);
+    }
+
+    // If you want to choose the colour of text at time of spawning.
+    public void SpawnText(string text, Vector2 position, Color color)
+    {
+        infoText.color = color;
+        infoText.text = text;
+        Instantiate(infoText, position, Quaternion.identity);
+    }
     #endregion
+
+    
 }
